@@ -1,0 +1,120 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      <span class="badge">Gestion Financière</span>
+      <h1 class="page-title">Caisse Journalière</h1>
+      <p class="page-subtitle">Suivi des ventes, enregistrement des règlements et rapprochement comptable de fin de journée.</p>
+    </div>
+    <nav class="nav-shortcuts">
+      <a routerLink="/catalogue" class="btn btn-secondary">✂️ Prestations</a>
+      <a routerLink="/rendez-vous" class="btn btn-secondary">📅 Rendez-vous</a>
+      <a routerLink="/fidelite" class="btn btn-secondary">⭐ Club Fidélité</a>
+      <a routerLink="/mes-recus" class="btn btn-secondary">🧾 Mes reçus</a>
+    </nav>
+  </header>
+
+  @if (message(); as msg) {
+    <div class="alert alert-success">{{ msg }}</div>
+  }
+
+  <!-- Sélection du jour -->
+  <div class="date-selector-card">
+    <label for="caisse-day">Jour de caisse :</label>
+    <input
+      id="caisse-day"
+      type="date"
+      [value]="selectedDay()"
+      (input)="selectedDay.set($any($event.target).value)"
+      class="date-input"
+    />
+  </div>
+
+  <!-- Bilan du Rapprochement -->
+  <div class="reconciliation-summary" [class.balanced]="reconciliation().isBalanced" [class.unbalanced]="!reconciliation().isBalanced">
+    <div class="reconcile-card">
+      <span class="reconcile-label">Total des Ventes (Jour)</span>
+      <span class="reconcile-amount">{{ reconciliation().totalSales }} €</span>
+      <small>{{ reconciliation().salesCount }} ticket(s)</small>
+    </div>
+    <div class="reconcile-card">
+      <span class="reconcile-label">Total des Paiements Reçus</span>
+      <span class="reconcile-amount">{{ reconciliation().totalPayments }} €</span>
+      <small>{{ reconciliation().paymentsCount }} encaissement(s)</small>
+    </div>
+    <div class="reconcile-card">
+      <span class="reconcile-label">Statut du Rapprochement</span>
+      <span class="status-badge" [class.badge-success]="reconciliation().isBalanced" [class.badge-warning]="!reconciliation().isBalanced">
+        {{ reconciliation().isBalanced ? '✅ Caisse Parfaitement Équilibrée' : '⚠️ Écart de ' + reconciliation().difference + ' €' }}
+      </span>
+      <small>Différence : {{ reconciliation().difference }} €</small>
+    </div>
+  </div>
+
+  <div class="caisse-grid">
+    <!-- Colonne 1 : Ventes du jour -->
+    <div class="caisse-card">
+      <h2 class="section-title">Ventes du Jour</h2>
+      <div class="quick-add-form">
+        <input
+          type="number"
+          min="1"
+          [value]="saleTotal()"
+          (input)="saleTotal.set(+$any($event.target).value)"
+          placeholder="Montant (€)"
+          class="input-number"
+        />
+        <select [value]="saleMethod()" (change)="saleMethod.set($any($event.target).value)" class="select-method">
+          <option value="Carte Bancaire">Carte Bancaire</option>
+          <option value="Espèces">Espèces</option>
+          <option value="Chèque">Chèque</option>
+        </select>
+        <button type="button" class="btn btn-primary" (click)="addSale()">+ Vente</button>
+      </div>
+
+      <div class="items-table">
+        @for (sale of daySales(); track sale.id) {
+          <div class="table-row">
+            <span>Ticket #{{ sale.id.substring(0, 8) }}</span>
+            <span class="method-chip">{{ sale.paymentMethod }}</span>
+            <strong class="amount">{{ sale.total }} €</strong>
+          </div>
+        } @empty {
+          <p class="empty-notice">Aucune vente enregistrée pour cette journée.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Colonne 2 : Paiements encaissés -->
+    <div class="caisse-card">
+      <h2 class="section-title">Paiements & Encaissements</h2>
+      <div class="quick-add-form">
+        <input
+          type="number"
+          min="1"
+          [value]="payAmount()"
+          (input)="payAmount.set(+$any($event.target).value)"
+          placeholder="Montant (€)"
+          class="input-number"
+        />
+        <select [value]="payMethod()" (change)="payMethod.set($any($event.target).value)" class="select-method">
+          <option value="Carte Bancaire">Carte Bancaire</option>
+          <option value="Espèces">Espèces</option>
+          <option value="Chèque">Chèque</option>
+        </select>
+        <button type="button" class="btn btn-primary" (click)="addPayment()">+ Paiement</button>
+      </div>
+
+      <div class="items-table">
+        @for (payment of dayPayments(); track payment.id) {
+          <div class="table-row">
+            <span>Règlement #{{ payment.id.substring(0, 8) }}</span>
+            <span class="method-chip">{{ payment.method }}</span>
+            <strong class="amount">{{ payment.amount }} €</strong>
+          </div>
+        } @empty {
+          <p class="empty-notice">Aucun paiement enregistré pour cette journée.</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>

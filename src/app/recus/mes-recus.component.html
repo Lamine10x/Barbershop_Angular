@@ -1,0 +1,33 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      <span class="badge">Espace client</span>
+      <h1 class="page-title">Mes reçus</h1>
+      <p class="page-subtitle">Consultez et exportez les reçus de vos prestations au salon.</p>
+    </div>
+    <nav class="nav-shortcuts">
+      <a routerLink="/catalogue" class="btn btn-secondary">✂️ Prestations</a>
+      <a routerLink="/rendez-vous" class="btn btn-secondary">📅 Rendez-vous</a>
+      <a routerLink="/fidelite" class="btn btn-secondary">⭐ Club Fidélité</a>
+    </nav>
+  </header>
+
+  <div class="receipts-panel">
+    <h2 class="section-title">Mes reçus de caisse</h2>
+    @if (receipts().length > 0) {
+      <div class="items-table">
+        @for (receipt of receipts(); track receipt.id) {
+          <div class="table-row">
+            <strong>{{ receipt.reference }}</strong>
+            <span class="method-chip">{{ receipt.day }}</span>
+            <span class="method-chip">{{ receipt.paymentMethod }}</span>
+            <strong class="receipt-amount">{{ receipt.amount }} €</strong>
+            <a [routerLink]="['/mes-recus', receipt.id]" class="btn btn-primary btn-sm">Exporter</a>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="receipts-empty">Vous n'avez aucun reçu pour le moment.</p>
+    }
+  </div>
+</div>

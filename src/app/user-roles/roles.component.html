@@ -1,0 +1,716 @@
+<div class="admin-shell">
+
+  <!-- ═══════ SIDEBAR ═══════ -->
+  <aside class="admin-sidebar-nav">
+    <div class="sidebar-brand">
+      <span class="brand-icon">💈</span>
+      <div>
+        <span class="brand-name">Barbersop</span>
+        <span class="brand-sub">Admin Panel</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <button class="nav-item" [class.active]="activeTab() === 'dashboard'" (click)="setTab('dashboard')">
+        <span class="nav-icon">🏠</span>
+        <span>Tableau de bord</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'users'" (click)="setTab('users')">
+        <span class="nav-icon">👥</span>
+        <span>Utilisateurs & Rôles</span>
+        <span class="nav-badge">{{ usersList().length }}</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'catalogue'" (click)="setTab('catalogue')">
+        <span class="nav-icon">✂️</span>
+        <span>Catalogue Prestations</span>
+        <span class="nav-badge">{{ prestationsCount() }}</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'team'" (click)="setTab('team')">
+        <span class="nav-icon">💈</span>
+        <span>Équipe & Planning</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'receipts'" (click)="setTab('receipts')">
+        <span class="nav-icon">🧾</span>
+        <span>Reçus</span>
+        <span class="nav-badge">{{ receiptsList().length }}</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-user-block">
+      <div class="sidebar-user-avatar">{{ currentUser()?.firstName?.charAt(0) ?? 'A' }}</div>
+      <div class="sidebar-user-info">
+        <strong>{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</strong>
+        <span class="sidebar-user-role">Administrateur</span>
+      </div>
+    </div>
+
+    <div class="sidebar-actions">
+      <a routerLink="/caisse" class="sidebar-link">💶 Caisse</a>
+      <a routerLink="/rendez-vous" class="sidebar-link">📅 Planning</a>
+      <button type="button" class="sidebar-logout" (click)="signOut()">
+        <span>⏻</span> Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══════ CONTENU PRINCIPAL ═══════ -->
+  <main class="admin-content">
+
+    @if (successMessage(); as msg) {
+      <div class="toast-notification">✅ {{ msg }}</div>
+    }
+
+    <!-- ══════════════════════════════════════════
+         ONGLET : TABLEAU DE BORD
+    ══════════════════════════════════════════ -->
+    @if (activeTab() === 'dashboard') {
+      <div class="tab-pane">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Tableau de bord</h1>
+            <p class="content-subtitle">Vue d'ensemble en temps réel du salon</p>
+          </div>
+          <span class="live-badge">
+            <span class="live-dot"></span>
+            Données en direct
+          </span>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-gold">
+            <div class="kpi-header">
+              <span class="kpi-icon">💰</span>
+              <span class="kpi-trend up">+12% ↑</span>
+            </div>
+            <div class="kpi-value">{{ todayCash().totalSales | number:'1.2-2' }} €</div>
+            <div class="kpi-label">Recettes du jour</div>
+            <div class="kpi-sub">{{ todayCash().salesCount }} tickets enregistrés</div>
+          </div>
+
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-header">
+              <span class="kpi-icon">📅</span>
+              <span class="kpi-trend up">+3 ↑</span>
+            </div>
+            <div class="kpi-value">{{ appointmentsCount() }}</div>
+            <div class="kpi-label">Rendez-vous total</div>
+            <div class="kpi-sub">{{ hairdressers.length }} coiffeurs actifs</div>
+          </div>
+
+          <div class="kpi-card kpi-green">
+            <div class="kpi-header">
+              <span class="kpi-icon">👥</span>
+              <span class="kpi-trend">Stable</span>
+            </div>
+            <div class="kpi-value">{{ usersList().length }}</div>
+            <div class="kpi-label">Comptes enregistrés</div>
+            <div class="kpi-sub">{{ adminCount() }} admin · {{ clientCount() }} clients</div>
+          </div>
+
+          <div class="kpi-card kpi-purple">
+            <div class="kpi-header">
+              <span class="kpi-icon">✂️</span>
+              <span class="kpi-trend up">Nouveau ↑</span>
+            </div>
+            <div class="kpi-value">{{ prestationsCount() }}</div>
+            <div class="kpi-label">Prestations au catalogue</div>
+            <div class="kpi-sub">Toutes catégories confondues</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dash-grid">
+          <!-- Rapprochement Caisse -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>💶 Caisse du Jour</h2>
+              <span class="dash-date">{{ todayIso }}</span>
+            </div>
+            <div class="reconcile-row">
+              <div class="reconcile-item">
+                <span class="rec-label">Ventes enregistrées</span>
+                <span class="rec-value gold">{{ todayCash().totalSales | number:'1.2-2' }} €</span>
+              </div>
+              <div class="reconcile-item">
+                <span class="rec-label">Encaissements</span>
+                <span class="rec-value green">{{ todayCash().totalPayments | number:'1.2-2' }} €</span>
+              </div>
+              <div class="reconcile-item">
+                <span class="rec-label">Écart</span>
+                <span class="rec-value" [class.red]="!todayCash().isBalanced" [class.green]="todayCash().isBalanced">
+                  {{ todayCash().isBalanced ? '✓ Équilibré' : todayCash().difference + ' €' }}
+                </span>
+              </div>
+            </div>
+            <div class="progress-section">
+              <div class="progress-label">
+                <span>Taux de remplissage</span>
+                <span>{{ todayCash().salesCount }}/{{ todayCash().salesCount + 5 }} tickets</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" [style.width.%]="fillRate()"></div>
+              </div>
+            </div>
+            <a routerLink="/caisse" class="dash-link-btn">Gérer la caisse →</a>
+          </div>
+
+          <!-- Équipe aujourd'hui -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>👨‍💼 Équipe Aujourd'hui</h2>
+              <span class="status-tag online">En service</span>
+            </div>
+            <div class="team-roster">
+              @for (hd of hairdressers; track hd.id) {
+                <div class="roster-row">
+                  <div class="roster-avatar">{{ hd.name.charAt(0) }}</div>
+                  <div class="roster-info">
+                    <strong>{{ hd.name }}</strong>
+                    <small>{{ hd.specialty }}</small>
+                  </div>
+                  <div class="roster-slots">
+                    <span class="slot-count">{{ getHdRdvCount(hd.id) }} RDV</span>
+                    <span class="live-dot"></span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Activité récente -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>🕐 Activité Récente</h2>
+            </div>
+            <div class="activity-feed">
+              <div class="activity-item">
+                <span class="activity-dot gold"></span>
+                <div>
+                  <strong>Nouveau client inscrit</strong>
+                  <small>Il y a 5 min</small>
+                </div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-dot green"></span>
+                <div>
+                  <strong>Vente de 40 € enregistrée</strong>
+                  <small>Il y a 18 min</small>
+                </div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-dot blue"></span>
+                <div>
+                  <strong>RDV réservé — Alexandre 14h00</strong>
+                  <small>Il y a 32 min</small>
+                </div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-dot gold"></span>
+                <div>
+                  <strong>Prestation ajoutée au catalogue</strong>
+                  <small>Il y a 1h</small>
+                </div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-dot blue"></span>
+                <div>
+                  <strong>RDV réservé — Julien 09h45</strong>
+                  <small>Ce matin</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Répartition méthodes de paiement -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>💳 Modes de Paiement</h2>
+            </div>
+            <div class="payment-dist">
+              <div class="pay-row">
+                <span class="pay-icon">💳</span>
+                <div class="pay-info">
+                  <span>Carte Bancaire</span>
+                  <div class="pay-bar-bg">
+                    <div class="pay-bar" style="width:62%; background: var(--accent-gold)"></div>
+                  </div>
+                </div>
+                <span class="pay-pct">62%</span>
+              </div>
+              <div class="pay-row">
+                <span class="pay-icon">💵</span>
+                <div class="pay-info">
+                  <span>Espèces</span>
+                  <div class="pay-bar-bg">
+                    <div class="pay-bar" style="width:28%; background: #34d399"></div>
+                  </div>
+                </div>
+                <span class="pay-pct">28%</span>
+              </div>
+              <div class="pay-row">
+                <span class="pay-icon">📱</span>
+                <div class="pay-info">
+                  <span>Virement / Mobile</span>
+                  <div class="pay-bar-bg">
+                    <div class="pay-bar" style="width:10%; background: #818cf8"></div>
+                  </div>
+                </div>
+                <span class="pay-pct">10%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════
+         ONGLET : UTILISATEURS & RÔLES
+    ══════════════════════════════════════════ -->
+    @if (activeTab() === 'users') {
+      <div class="tab-pane">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Utilisateurs & Rôles</h1>
+            <p class="content-subtitle">Gérez les accès et privilèges de chaque compte</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" (click)="refreshUsers()">🔄 Actualiser</button>
+        </div>
+
+        <!-- Filters / Search -->
+        <div class="user-filter-bar">
+          <div class="search-pill">
+            <span>🔍</span>
+            <input
+              type="text"
+              placeholder="Rechercher un utilisateur..."
+              [value]="userSearch()"
+              (input)="userSearch.set($any($event.target).value)"
+              class="search-pill-input"
+            />
+          </div>
+          <div class="role-filters">
+            <button class="filter-chip" [class.active]="roleFilter() === 'all'" (click)="roleFilter.set('all')">Tous ({{ usersList().length }})</button>
+            <button class="filter-chip" [class.active]="roleFilter() === 'administrator'" (click)="roleFilter.set('administrator')">👑 Admins ({{ adminCount() }})</button>
+            <button class="filter-chip" [class.active]="roleFilter() === 'client'" (click)="roleFilter.set('client')">👤 Clients ({{ clientCount() }})</button>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="users-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Email</th>
+                <th>Rôle Actuel</th>
+                <th>Points Fidélité</th>
+                <th>Membre depuis</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of filteredUsers(); track user.id) {
+                <tr class="user-row">
+                  <td>
+                    <div class="user-cell">
+                      <span class="user-avatar-circle" [class.avatar-admin]="user.role === 'administrator'">
+                        {{ user.firstName ? user.firstName.charAt(0) : 'U' }}
+                      </span>
+                      <div>
+                        <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                        @if (user.id === currentUser()?.id) {
+                          <span class="self-tag">● Vous</span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td class="email-cell">{{ user.email }}</td>
+                  <td>
+                    <span class="role-pill" [class.role-admin]="user.role === 'administrator'" [class.role-client]="user.role === 'client'">
+                      {{ user.role === 'administrator' ? '👑 Administrateur' : '👤 Client' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="points-display-row">
+                      <span class="points-tag">{{ user.loyaltyPoints || 0 }} pts</span>
+                      <div class="mini-progress-bg">
+                        <div class="mini-progress-fill" [style.width.%]="(user.loyaltyPoints || 0) / 5"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="date-cell">{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td style="text-align: right;">
+                    @if (user.id !== currentUser()?.id) {
+                      <button
+                        type="button"
+                        class="role-toggle-btn"
+                        [class.promote]="user.role === 'client'"
+                        [class.demote]="user.role === 'administrator'"
+                        (click)="toggleRole(user)"
+                      >
+                        {{ user.role === 'administrator' ? '↓ Rétrograder Client' : '↑ Promouvoir Admin' }}
+                      </button>
+                    } @else {
+                      <span class="active-badge">⚡ Session active</span>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-state-cell">
+                    <div class="empty-state">
+                      <span>🔍</span>
+                      <p>Aucun utilisateur trouvé pour ce filtre</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Matrice droits -->
+        <div class="rights-matrix-card">
+          <h3>🔐 Matrice des Droits d'Accès</h3>
+          <div class="rights-matrix">
+            <div class="matrix-header">
+              <span>Fonctionnalité</span>
+              <span>👤 Client</span>
+              <span>👑 Admin</span>
+            </div>
+            @for (right of rightsMatrix; track right.name) {
+              <div class="matrix-row">
+                <span>{{ right.name }}</span>
+                <span [class.check]="right.client" [class.cross]="!right.client">{{ right.client ? '✓' : '✗' }}</span>
+                <span [class.check]="right.admin" [class.cross]="!right.admin">{{ right.admin ? '✓' : '✗' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════
+         ONGLET : CATALOGUE
+    ══════════════════════════════════════════ -->
+    @if (activeTab() === 'catalogue') {
+      <div class="tab-pane">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Catalogue des Prestations</h1>
+            <p class="content-subtitle">Ajoutez et gérez les services proposés au salon</p>
+          </div>
+          <a routerLink="/catalogue" class="btn btn-secondary btn-sm">👁️ Vue client</a>
+        </div>
+
+        <div class="catalogue-admin-grid">
+          <!-- Formulaire ajout -->
+          <div class="form-card">
+            <h3 class="form-card-title">+ Nouvelle Prestation</h3>
+            <form (ngSubmit)="createPrestation()" class="add-prestation-form">
+              <label>
+                Intitulé *
+                <input
+                  type="text"
+                  [value]="newPrestationName()"
+                  (input)="newPrestationName.set($any($event.target).value)"
+                  placeholder="ex: Soin Barbe & Masque Argile"
+                  required
+                />
+              </label>
+
+              <label>
+                Description
+                <textarea
+                  [value]="newPrestationDesc()"
+                  (input)="newPrestationDesc.set($any($event.target).value)"
+                  placeholder="Description des étapes du soin..."
+                  rows="3"
+                ></textarea>
+              </label>
+
+              <div class="form-row-2">
+                <label>
+                  Durée (min)
+                  <input
+                    type="number" min="10" step="5"
+                    [value]="newPrestationDuration()"
+                    (input)="newPrestationDuration.set(+$any($event.target).value)"
+                    required
+                  />
+                </label>
+                <label>
+                  Tarif (€)
+                  <input
+                    type="number" min="5" step="1"
+                    [value]="newPrestationPrice()"
+                    (input)="newPrestationPrice.set(+$any($event.target).value)"
+                    required
+                  />
+                </label>
+              </div>
+
+              <label>
+                Catégorie
+                <select [value]="newPrestationCategory()" (change)="newPrestationCategory.set($any($event.target).value)" class="select-method">
+                  <option value="Cheveux">✂️ Cheveux</option>
+                  <option value="Barbe">🧔 Barbe</option>
+                  <option value="Formules">💎 Formules</option>
+                  <option value="Soins">🌿 Soins</option>
+                </select>
+              </label>
+
+              <label>
+                URL de l'image (web)
+                <input
+                  type="url"
+                  [value]="newPrestationImage()"
+                  (input)="newPrestationImage.set($any($event.target).value)"
+                  placeholder="https://exemple.com/photo.jpg"
+                />
+              </label>
+
+              <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">
+                ✚ Ajouter au Catalogue
+              </button>
+            </form>
+          </div>
+
+          <!-- Résumé catalogue -->
+          <div class="catalogue-stats-col">
+            <div class="cat-stat-card">
+              <span class="cat-stat-icon">✂️</span>
+              <div>
+                <span class="cat-stat-val">{{ prestationsCount() }}</span>
+                <span class="cat-stat-lbl">Prestations totales</span>
+              </div>
+            </div>
+            <div class="cat-stat-card">
+              <span class="cat-stat-icon">🏷️</span>
+              <div>
+                <span class="cat-stat-val">{{ avgPrice() | number:'1.0-0' }} €</span>
+                <span class="cat-stat-lbl">Prix moyen</span>
+              </div>
+            </div>
+            <div class="cat-stat-card">
+              <span class="cat-stat-icon">⏱️</span>
+              <div>
+                <span class="cat-stat-val">{{ avgDuration() }} min</span>
+                <span class="cat-stat-lbl">Durée moyenne</span>
+              </div>
+            </div>
+
+            <div class="info-block">
+              <h4>💡 Conseils</h4>
+              <ul class="tips-list">
+                <li>Ajoutez une description détaillée pour rassurer les clients</li>
+                <li>Les formules combinées génèrent +30% de CA</li>
+                <li>Pensez à mettre les prix à jour chaque trimestre</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════
+         ONGLET : REÇUS
+    ══════════════════════════════════════════ -->
+    @if (activeTab() === 'receipts') {
+      <div class="tab-pane">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Génération de Reçus de Caisse</h1>
+            <p class="content-subtitle">Générez un reçu rattaché à un client ; celui-ci pourra l'exporter depuis « Mes reçus ».</p>
+          </div>
+        </div>
+
+        <div class="catalogue-admin-grid">
+          <div class="form-card">
+            <h3 class="form-card-title">+ Générer un reçu</h3>
+            <form (ngSubmit)="createReceipt()" class="add-prestation-form">
+              <label>
+                Client *
+                <select
+                  [value]="receiptClientEmail()"
+                  (change)="receiptClientEmail.set($any($event.target).value)"
+                  class="select-method"
+                  required
+                >
+                  <option value="" disabled>Sélectionner un client…</option>
+                  @for (client of clientUsers(); track client.id) {
+                    <option [value]="client.email">{{ client.firstName }} {{ client.lastName }} ({{ client.email }})</option>
+                  }
+                </select>
+              </label>
+
+              @if (clientUsers().length === 0) {
+                <p class="form-hint">Aucun client enregistré : les clients doivent d'abord créer un compte.</p>
+              }
+
+              <div class="form-row-2">
+                <label>
+                  Prestation *
+                  <select
+                    [value]="receiptPrestationName()"
+                    (change)="receiptPrestationName.set($any($event.target).value)"
+                    class="select-method"
+                    required
+                  >
+                    <option value="" disabled>Sélectionner une prestation…</option>
+                    @for (prestation of catalogueService.prestations(); track prestation.id) {
+                      <option [value]="prestation.name">{{ prestation.name }} ({{ prestation.price }} €)</option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  Prestataire *
+                  <select
+                    [value]="receiptPrestataireName()"
+                    (change)="receiptPrestataireName.set($any($event.target).value)"
+                    class="select-method"
+                    required
+                  >
+                    <option value="" disabled>Sélectionner un prestataire…</option>
+                    @for (hairdresser of hairdressers; track hairdresser.id) {
+                      <option [value]="hairdresser.name">{{ hairdresser.name }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+
+              <div class="form-row-2">
+                <label>
+                  Montant (€)
+                  <input type="number" min="1" step="1" [value]="receiptAmount()" (input)="receiptAmount.set(+$any($event.target).value)" required />
+                </label>
+                <label>
+                  Mode de paiement
+                  <select [value]="receiptMethod()" (change)="receiptMethod.set($any($event.target).value)" class="select-method">
+                    <option value="Carte Bancaire">Carte Bancaire</option>
+                    <option value="Espèces">Espèces</option>
+                    <option value="Chèque">Chèque</option>
+                  </select>
+                </label>
+              </div>
+
+              @if (receiptError(); as err) {
+                <div class="alert alert-error">{{ err }}</div>
+              }
+
+              <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Générer le reçu</button>
+            </form>
+          </div>
+
+          <div class="catalogue-stats-col">
+            <div class="cat-stat-card">
+              <span class="cat-stat-icon">€</span>
+              <div>
+                <span class="cat-stat-val">{{ receiptsList().length }}</span>
+                <span class="cat-stat-lbl">Reçus générés</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="receipts-panel">
+          <h2 class="section-title">Reçus générés</h2>
+          <div class="items-table">
+            @for (receipt of receiptsList(); track receipt.id) {
+              <div class="table-row">
+                <strong>{{ receipt.reference }}</strong>
+                <span class="method-chip">{{ receipt.day }}</span>
+                <span>{{ receipt.clientName }}</span>
+                <span class="method-chip">{{ receipt.paymentMethod }}</span>
+                <strong class="receipt-amount">{{ receipt.amount }} €</strong>
+              </div>
+            } @empty {
+              <p class="receipts-empty">Aucun reçu généré pour le moment.</p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════
+         ONGLET : ÉQUIPE
+    ══════════════════════════════════════════ -->
+    @if (activeTab() === 'team') {
+      <div class="tab-pane">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Équipe & Planning</h1>
+            <p class="content-subtitle">Gérez les coiffeurs et leur activité du salon</p>
+          </div>
+          <a routerLink="/rendez-vous" class="btn btn-secondary btn-sm">📅 Planning complet</a>
+        </div>
+
+        <div class="team-detail-grid">
+          @for (hd of hairdressers; track hd.id) {
+            <div class="team-profile-card">
+              <div class="team-card-top">
+                <div class="team-big-avatar">{{ hd.name.charAt(0) }}</div>
+                <div>
+                  <h3 class="team-member-name">{{ hd.name }}</h3>
+                  <span class="team-specialty">{{ hd.specialty }}</span>
+                </div>
+                <span class="online-badge">
+                  <span class="live-dot"></span> Disponible
+                </span>
+              </div>
+              <div class="team-card-stats">
+                <div class="team-stat">
+                  <span class="ts-value">{{ getHdRdvCount(hd.id) }}</span>
+                  <span class="ts-label">RDV total</span>
+                </div>
+                <div class="team-stat">
+                  <span class="ts-value">{{ getHdTodayCount(hd.id) }}</span>
+                  <span class="ts-label">Aujourd'hui</span>
+                </div>
+                <div class="team-stat">
+                  <span class="ts-value">{{ 10 - getHdTodayCount(hd.id) }}</span>
+                  <span class="ts-label">Créneaux libres</span>
+                </div>
+              </div>
+              <div class="team-occupation-bar">
+                <div class="tob-label">
+                  <span>Occupation du jour</span>
+                  <span>{{ getOccupationPct(hd.id) }}%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="getOccupationPct(hd.id)"></div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Planning Créneaux Visuels -->
+        <div class="schedule-overview-card">
+          <div class="dash-card-header">
+            <h2>🗓️ Aperçu des Créneaux — {{ todayIso }}</h2>
+            <span class="dash-date">Aujourd'hui</span>
+          </div>
+          <div class="schedule-grid-header">
+            <span></span>
+            @for (hd of hairdressers; track hd.id) {
+              <span class="sch-hd-name">{{ hd.name }}</span>
+            }
+          </div>
+          @for (slot of timeSlots; track slot) {
+            <div class="schedule-row">
+              <span class="sch-time">{{ slot }}</span>
+              @for (hd of hairdressers; track hd.id) {
+                <div class="sch-cell" [class.booked]="isSlotBooked(hd.id, slot)" [class.free]="!isSlotBooked(hd.id, slot)">
+                  {{ isSlotBooked(hd.id, slot) ? '✓ Réservé' : 'Libre' }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </main>
+</div>

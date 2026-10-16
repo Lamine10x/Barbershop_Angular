@@ -1,0 +1,144 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      <span class="badge">Programme Privilège</span>
+      <h1 class="page-title">Club Fidélité Barbersop</h1>
+      <p class="page-subtitle">Cumulez des points à chaque passage et débloquez des avantages exclusifs.</p>
+    </div>
+    <nav class="nav-shortcuts">
+      <a routerLink="/catalogue" class="btn btn-secondary">✂️ Prestations</a>
+      <a routerLink="/rendez-vous" class="btn btn-secondary">📅 Rendez-vous</a>
+      <a routerLink="/caisse" class="btn btn-secondary">💶 Caisse</a>
+      <a routerLink="/mes-recus" class="btn btn-secondary">🧾 Mes reçus</a>
+    </nav>
+  </header>
+
+  @if (successMessage(); as msg) {
+    <div class="alert alert-success">{{ msg }}</div>
+  }
+
+  <!-- Consultation Client -->
+  <div class="client-switch-card">
+    <label for="fidelite-email">Consulter le compte fidélité :</label>
+    <input
+      id="fidelite-email"
+      type="email"
+      [value]="clientEmail()"
+      (input)="clientEmail.set($any($event.target).value)"
+      class="client-email-input"
+    />
+  </div>
+
+  <div class="loyalty-grid">
+    <!-- Statut actuel du client -->
+    <div class="status-card">
+      <div class="tier-badge-large">
+        <span class="badge-icon">
+          @switch (profile().tier) {
+            @case ('Platine') { 💎 }
+            @case ('Or') { 🥇 }
+            @case ('Argent') { 🥈 }
+            @default { 🥉 }
+          }
+        </span>
+        <div>
+          <span class="tier-label">Niveau Actuel</span>
+          <h2 class="tier-name">{{ profile().tier }}</h2>
+        </div>
+      </div>
+
+      <div class="points-display">
+        <span class="points-num">{{ profile().points }}</span>
+        <span class="points-unit">Points accumulés</span>
+      </div>
+
+      @if (nextTier(); as next) {
+        <div class="progress-box">
+          <div class="progress-info">
+            <span>Prochain palier : <strong>{{ next.name }}</strong> ({{ next.minPoints }} pts)</span>
+            <span>{{ progressPercentage() }}%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" [style.width.%]="progressPercentage()"></div>
+          </div>
+        </div>
+      } @else {
+        <div class="vip-notice">⭐ Vous avez atteint le palier maximal Platine ! Félicitations !</div>
+      }
+
+      <div class="rewards-section">
+        <h3>Récompenses débloquées</h3>
+        @if (profile().rewards.length > 0) {
+          <ul class="rewards-list">
+            @for (reward of profile().rewards; track reward) {
+              <li class="reward-item">
+                <span>🎁 {{ reward }}</span>
+                <button type="button" class="btn btn-sm btn-outline" (click)="claimReward(reward)">
+                  Utiliser
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="empty-notice">Cumulez encore quelques points pour débloquer votre premier cadeau !</p>
+        }
+      </div>
+    </div>
+
+    <!-- Paliers & simulateur d'attribution -->
+    <div class="tiers-overview-card">
+      <h3 class="section-title">Les 4 Paliers du Club</h3>
+      <div class="tiers-table">
+        @for (tier of tiers; track tier.name) {
+          <div class="tier-row" [class.current]="tier.name === profile().tier">
+            <span class="tier-icon">{{ tier.badge }}</span>
+            <div class="tier-details">
+              <strong>{{ tier.name }}</strong>
+              <small>{{ tier.minPoints }} points requis</small>
+            </div>
+            <span class="tier-gift">{{ tier.rewardAvailable }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="award-box">
+        <h4>Attribution de points (Comptoir Barbersop)</h4>
+        <div class="award-inputs">
+          <input
+            type="number"
+            min="5"
+            max="100"
+            [value]="pointsToAdd()"
+            (input)="pointsToAdd.set(+$any($event.target).value)"
+            class="input-number"
+            placeholder="Points"
+          />
+          <input
+            type="text"
+            [value]="serviceName()"
+            (input)="serviceName.set($any($event.target).value)"
+            class="input-service"
+            placeholder="Nom du service"
+          />
+          <button type="button" class="btn btn-primary" (click)="awardPoints()">
+            Créditer les points
+          </button>
+        </div>
+      </div>
+
+      <div class="history-box">
+        <h4>Historique des activités</h4>
+        <div class="activities-list">
+          @for (act of history(); track act.id) {
+            <div class="activity-row">
+              <span class="act-date">{{ act.date }}</span>
+              <span class="act-desc">{{ act.description }}</span>
+            </div>
+          } @empty {
+            <p class="empty-notice">Aucune activité enregistrée pour ce compte.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

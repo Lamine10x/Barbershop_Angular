@@ -1,0 +1,119 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      <span class="badge">Notre Savoir-Faire</span>
+      <h1 class="page-title">Catalogue des Prestations</h1>
+      <p class="page-subtitle">Découvrez nos coupes signature, soins de barbe et rituels traditionnels.</p>
+    </div>
+    <nav class="nav-shortcuts">
+      <a routerLink="/rendez-vous" class="btn btn-secondary">📅 Rendez-vous</a>
+      <a routerLink="/fidelite" class="btn btn-secondary">⭐ Club Fidélité</a>
+      <a routerLink="/caisse" class="btn btn-secondary">💶 Caisse</a>
+    </nav>
+  </header>
+
+  <div class="hero-stats-banner">
+    <div class="stat-card">
+      <span class="stat-icon">💈</span>
+      <div>
+        <span class="stat-value">3 Experts</span>
+        <span class="stat-label">Maîtres barbiers sur place</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">⭐</span>
+      <div>
+        <span class="stat-value">4.9 / 5</span>
+        <span class="stat-label">380 avis clients vérifiés</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">⚡</span>
+      <div>
+        <span class="stat-value">Temps Réel</span>
+        <span class="stat-label">Créneaux du jour disponibles</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">🎁</span>
+      <div>
+        <span class="stat-value">Club Fidélité</span>
+        <span class="stat-label">Points cumulés dès la 1ère visite</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="filter-section">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        placeholder="Rechercher une prestation (ex: coupe, barbe, rasage...)"
+        class="search-input"
+        id="catalogue-search-input"
+      />
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="searchQuery.set('')">✕</button>
+      }
+    </div>
+
+    <div class="categories-list">
+      @for (category of categories(); track category) {
+        <button
+          type="button"
+          class="category-chip"
+          [class.active]="selectedCategory() === category"
+          (click)="selectCategory(category)"
+        >
+          {{ category }}
+        </button>
+      }
+    </div>
+  </section>
+
+  <div class="prestation-grid">
+    @for (prestation of filteredPrestations(); track prestation.id) {
+      <article class="prestation-card">
+        <div class="prestation-image">
+          @if (prestation.imageUrl && !showImageFallback(prestation.id)) {
+            <img
+              [src]="prestation.imageUrl"
+              [alt]="prestation.name"
+              loading="lazy"
+              (error)="onImageError(prestation.id)"
+            />
+          } @else {
+            <div class="prestation-image-fallback" aria-hidden="true">
+              <span class="fallback-icon">💈</span>
+              <span class="fallback-category">{{ prestation.category }}</span>
+            </div>
+          }
+        </div>
+        <div class="card-header">
+          <span class="category-tag">{{ prestation.category }}</span>
+          <span class="duration-badge">⏱️ {{ prestation.durationMinutes }} min</span>
+        </div>
+        <h2 class="prestation-name">{{ prestation.name }}</h2>
+        <p class="prestation-description">{{ prestation.description }}</p>
+        <div class="card-footer">
+          <div class="price-container">
+            <span class="price-label">Tarif</span>
+            <span class="price-value">{{ prestation.price }} €</span>
+          </div>
+          <a [routerLink]="['/rendez-vous']" [queryParams]="{ prestationId: prestation.id }" class="btn btn-primary">
+            Réserver
+          </a>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state">
+        <p>Aucune prestation ne correspond à votre recherche « {{ searchQuery() }} ».</p>
+        <button class="btn btn-secondary" (click)="searchQuery.set(''); selectCategory('Toutes')">
+          Réinitialiser les filtres
+        </button>
+      </div>
+    }
+  </div>
+</div>

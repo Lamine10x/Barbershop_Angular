@@ -1,0 +1,153 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      @if (isAdmin()) {
+        <span class="badge" style="background: rgba(245, 158, 11, 0.2); border-color: #f59e0b;">
+          🛡️ Mode Direction • Planning Salon
+        </span>
+        <h1 class="page-title">Planning & Agenda des Rendez-vous</h1>
+        <p class="page-subtitle">
+          Supervision des créneaux par coiffeur et enregistrement des réservations pour les clients (au comptoir ou par téléphone).
+        </p>
+      } @else {
+        <span class="badge">Réservation en Ligne</span>
+        <h1 class="page-title">Prendre Rendez-vous</h1>
+        <p class="page-subtitle">
+          Choisissez votre coiffeur préféré et sélectionnez votre créneau disponible en temps réel.
+        </p>
+      }
+    </div>
+    <nav class="nav-shortcuts">
+      @if (isAdmin()) {
+        <a routerLink="/roles" class="btn btn-secondary">🛡️ Administration</a>
+        <a routerLink="/caisse" class="btn btn-secondary">💶 Caisse</a>
+      } @else {
+        <a routerLink="/catalogue" class="btn btn-secondary">✂️ Prestations</a>
+        <a routerLink="/fidelite" class="btn btn-secondary">⭐ Club Fidélité</a>
+      }
+    </nav>
+  </header>
+
+  @if (successMessage(); as msg) {
+    <div class="alert alert-success">{{ msg }}</div>
+  }
+  @if (errorMessage(); as err) {
+    <div class="alert alert-error">{{ err }}</div>
+  }
+
+  <div class="booking-layout">
+    <div class="booking-card">
+      <h2 class="section-title">1. Choisir le coiffeur</h2>
+      <div class="hairdressers-grid">
+        @for (hd of hairdressers; track hd.id) {
+          <div
+            class="hairdresser-card"
+            [class.active]="selectedHairdresserId() === hd.id"
+            (click)="selectHairdresser(hd.id)"
+          >
+            <div class="hd-avatar">💈</div>
+            <div class="hd-info">
+              <h3>{{ hd.name }}</h3>
+              <p>{{ hd.specialty }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <h2 class="section-title" style="margin-top: 1.5rem;">2. Date & Créneaux disponibles</h2>
+      <div class="date-picker-row">
+        <label for="rdv-date">Date :</label>
+        <input
+          id="rdv-date"
+          type="date"
+          [value]="selectedDate()"
+          (input)="selectedDate.set($any($event.target).value)"
+          class="date-input"
+        />
+      </div>
+
+      <div class="slots-container">
+        @for (slot of availableSlots(); track slot) {
+          <button
+            type="button"
+            class="slot-btn"
+            [class.selected]="selectedSlot() === slot"
+            (click)="selectSlot(slot)"
+          >
+            {{ slot }}
+          </button>
+        } @empty {
+          <p class="empty-notice">Aucun créneau disponible pour ce coiffeur à cette date.</p>
+        }
+      </div>
+
+      <h2 class="section-title" style="margin-top: 1.5rem;">
+        {{ isAdmin() ? '3. Enregistrer pour un Client (Guichet ou Téléphone)' : '3. Vos Coordonnées' }}
+      </h2>
+
+      @if (isAdmin()) {
+        <p style="font-size: 0.85rem; color: #f59e0b; margin-bottom: 0.75rem;">
+          ℹ️ En tant qu'administrateur, vous planifiez les rendez-vous pour vos clients.
+        </p>
+      }
+
+      <div class="client-form-row">
+        <input
+          type="email"
+          [value]="clientEmail()"
+          (input)="clientEmail.set($any($event.target).value)"
+          [placeholder]="isAdmin() ? 'Email du client (ex: client@domaine.fr)' : 'Votre email'"
+          class="client-email-input"
+          required
+        />
+        <button
+          type="button"
+          class="btn btn-primary btn-book"
+          [disabled]="!selectedSlot()"
+          (click)="book()"
+        >
+          {{ isAdmin() ? 'Enregistrer le RDV Client' : 'Confirmer mon rendez-vous' }}
+        </button>
+      </div>
+    </div>
+
+    <aside class="history-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <h2 class="section-title" style="margin: 0;">Agenda du Coiffeur</h2>
+        <span class="badge" style="font-size: 0.7rem;">{{ history().length }} RDV</span>
+      </div>
+      <p class="history-sub">Réservations enregistrées pour ce professionnel</p>
+
+      <div class="history-list" style="margin-top: 1rem;">
+        @for (apt of history(); track apt.id) {
+          <div class="history-item" [class.cancelled]="apt.status === 'cancelled'" style="padding: 0.95rem; background: var(--bg-input); border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
+              <div class="history-item-date" style="font-weight: 700; color: #fff;">
+                📅 {{ apt.date }} à <span style="color: var(--accent-gold);">{{ apt.startTime }}</span>
+              </div>
+              <span class="status-tag" [class.status-booked]="apt.status === 'booked'" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255, 255, 255, 0.08);">
+                {{ apt.status === 'booked' ? 'Confirmé' : 'Annulé' }}
+              </span>
+            </div>
+            <div class="history-item-client" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              Client : <strong style="color: #cbd5e1;">{{ apt.clientEmail }}</strong>
+            </div>
+
+            @if (isAdmin() && apt.status === 'booked') {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline"
+                style="color: #f87171; border-color: rgba(239, 68, 68, 0.4); font-size: 0.75rem; padding: 0.25rem 0.6rem; width: 100%;"
+                (click)="cancelAppointment(apt.id)"
+              >
+                ✕ Annuler ce créneau
+              </button>
+            }
+          </div>
+        } @empty {
+          <p class="empty-notice">Aucun rendez-vous sur cet agenda.</p>
+        }
+      </div>
+    </aside>
+  </div>
+</div>

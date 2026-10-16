@@ -1,0 +1,82 @@
+<div class="page-container receipt-view">
+  <div class="no-print print-actions">
+    <a routerLink="/mes-recus" class="btn btn-secondary">← Retour à mes reçus</a>
+    @if (receipt(); as r) {
+      <button type="button" class="btn btn-primary" (click)="print()">Imprimer / Enregistrer en PDF</button>
+    }
+  </div>
+
+  @if (receipt(); as r) {
+    <article class="receipt-document">
+      <div class="receipt-accent" aria-hidden="true"></div>
+
+      <header class="receipt-head">
+        <div class="receipt-brand">
+          <span class="receipt-monogram" aria-hidden="true">B</span>
+          <div>
+            <h1 class="receipt-shop">Barbersop</h1>
+            <p class="receipt-shop-sub">Salon de coiffure &amp; barbier</p>
+          </div>
+        </div>
+        <div class="receipt-number">
+          <span class="receipt-label">Reçu n°</span>
+          <strong class="receipt-ref">{{ r.reference }}</strong>
+        </div>
+      </header>
+
+      <section class="receipt-meta">
+        <div class="receipt-meta-item">
+          <span class="receipt-label">Client</span>
+          <strong>{{ r.clientName }}</strong>
+        </div>
+        <div class="receipt-meta-item">
+          <span class="receipt-label">Email</span>
+          <strong>{{ r.clientEmail }}</strong>
+        </div>
+        <div class="receipt-meta-item">
+          <span class="receipt-label">Date</span>
+          <strong>{{ r.day }}</strong>
+        </div>
+        <div class="receipt-meta-item">
+          <span class="receipt-label">Paiement</span>
+          <strong>{{ r.paymentMethod }}</strong>
+        </div>
+      </section>
+
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>Prestation</th>
+            <th>Prestataire</th>
+            <th class="receipt-right">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ r.prestationName || 'Prestation réalisée' }}</strong></td>
+            <td>{{ r.prestataireName || '—' }}</td>
+            <td class="receipt-right">{{ r.amount }} €</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Total réglé</td>
+            <td class="receipt-right receipt-total">{{ r.amount }} €</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="receipt-paid">
+        <span class="receipt-paid-method">Réglé par {{ r.paymentMethod }}</span>
+        <span class="receipt-paid-stamp">Payé</span>
+      </div>
+
+      <footer class="receipt-foot">
+        <p class="receipt-thanks">Merci de nous avoir fait confiance et à bientôt !</p>
+        <p class="receipt-note">Reçu généré électroniquement — document non contractuel.</p>
+      </footer>
+    </article>
+  } @else {
+    <div class="alert alert-error">Ce reçu est introuvable ou ne vous appartient pas.</div>
+  }
+</div>

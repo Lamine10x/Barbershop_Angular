@@ -1,0 +1,76 @@
+<div class="auth-form" style="max-width: 500px;">
+  <h1>Créer un Compte</h1>
+  <p style="text-align: center; color: var(--text-muted); margin-top: -1rem; margin-bottom: 1.5rem;">
+    Rejoignez Barbersop en tant que Client ou Administrateur
+  </p>
+
+  @if (error(); as message) {
+    <div class="alert alert-error" role="alert">{{ message }}</div>
+  }
+
+  <form (ngSubmit)="onSubmit()">
+    <!-- Choix du Rôle avec 2 grandes cartes interactives -->
+    <div style="margin-bottom: 1.5rem;">
+      <span style="display: block; margin-bottom: 0.6rem; font-size: 0.95rem; font-weight: 600; color: #fff;">
+        Je crée un compte :
+      </span>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <button
+          type="button"
+          (click)="setRole('client')"
+          [style.background]="role() === 'client' ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-input)'"
+          [style.borderColor]="role() === 'client' ? '#f59e0b' : 'var(--border-subtle)'"
+          style="padding: 1rem; border: 2px solid; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s;"
+        >
+          <div style="font-size: 1.75rem; margin-bottom: 0.25rem;">👤</div>
+          <div style="font-weight: 700; color: #fff; font-size: 1rem;">Client</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Réservations & Fidélité</div>
+        </button>
+
+        <button
+          type="button"
+          (click)="setRole('administrator')"
+          [style.background]="role() === 'administrator' ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-input)'"
+          [style.borderColor]="role() === 'administrator' ? '#f59e0b' : 'var(--border-subtle)'"
+          style="padding: 1rem; border: 2px solid; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s;"
+        >
+          <div style="font-size: 1.75rem; margin-bottom: 0.25rem;">👑</div>
+          <div style="font-weight: 700; color: #fff; font-size: 1rem;">Administrateur</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Gestion Salon & Caisse</div>
+        </button>
+      </div>
+    </div>
+
+    <label>
+      Prénom
+      <input type="text" [value]="firstName()" (input)="firstName.set($any($event.target).value)" placeholder="Votre prénom" required />
+    </label>
+    <label>
+      Nom
+      <input type="text" [value]="lastName()" (input)="lastName.set($any($event.target).value)" placeholder="Votre nom" required />
+    </label>
+    <label>
+      Email
+      <input type="email" [value]="email()" (input)="email.set($any($event.target).value)" placeholder="votre.email@domaine.fr" required />
+    </label>
+    <label>
+      Mot de passe
+      <input
+        type="password"
+        [value]="password()"
+        (input)="password.set($any($event.target).value)"
+        placeholder="••••••••"
+        required
+      />
+    </label>
+
+    <button type="submit" [disabled]="isSubmitting()" style="margin-top: 1rem;">
+      Créer mon compte {{ role() === 'administrator' ? 'Administrateur' : 'Client' }}
+    </button>
+  </form>
+
+  <p>
+    Déjà un compte ?
+    <a routerLink="/login">Connexion</a>
+  </p>
+</div>
